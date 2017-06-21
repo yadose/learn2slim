@@ -24,6 +24,17 @@ class MonitoringToolAPI {
       echo "Errno: " . $mysqli->connect_errno . "\n";
       echo "Error: " . $mysqli->connect_error . "\n";
     }
+    $sqlquery = "select * from users";
+    if($result = $mysqli->query($sqlquery)){
+        while($row = $result->fetch_assoc()){
+          echo $row['name'];
+        }
+        //die("ok");
+    }
+    else{
+      echo $mysqli->error;
+      //die('nicht ok');
+    }
     //die('');
   }
   public function finishedJob(){
