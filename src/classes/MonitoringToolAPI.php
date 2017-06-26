@@ -1,46 +1,127 @@
 <?php
 namespace Classes;
 use \Mysqli;
-//use \PDO;
+
 class MonitoringToolAPI {
-  //DATABASE
+  //database credential variables
   private $database;
   private $databasehost;
   private $databaseuser;
   private $databasepassword;
-  public function __construct($dbname,$dbhost,$dbuser,$dbpasswd){
-    $this->database = $dbname;
-    $this->databasehost = $dbhost;
-    $this->databaseuser = $dbuser;
-    $this->databasepassword = $dbpasswd;
+  private $mysqli;
+  private $allowedTables = array(
+    "clients",
+    "client",
+    "devices",
+    "device",
+    "errors",
+    "error",
+    "jobs",
+    "job"
+  );
+  /*
+   * Creates new object of this class and connects to database
+   * $sDbname (String) - Name of the Database
+   * $sDbhost (String) - Name of the Database Host
+   * $sDbuser (String) - Name of the Database User
+   * $sDbpasswd (String) - Full String of the Database Users Password
+   * returns NULL
+   */
+  public function __construct($sDbname,$sDbhost,$sDbuser,$sDbpasswd){
+    $this->database = $sDbname;
+    $this->databasehost = $sDbhost;
+    $this->databaseuser = $sDbuser;
+    $this->databasepassword = $sDbpasswd;
+    $this->connect();
   }
+  /*
+   * Checks if tablenames are allowed depending from $this->allowedTables
+   * $sCheck (String) - String which needs to be checked
+   * returns (Bool)
+   */
+  public function isAllowed($sCheck){
+    return in_array($sCheck,$this->allowedTables);
+  }
+  /*
+   * Connects to database using credential parameters from constructor
+   * returns NULL
+   */
   public function connect(){
     //phpinfo();
-    $mysqli = new Mysqli($this->databasehost,$this->databaseuser,$this->databasepassword,$this->database);
-    //$pdo = new PDO("mysql:host=" . $this->databasehost . ";dbname=" . $this->database, $this->databaseuser, $this->databasepassword);
-    //$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    //$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    if($mysqli->connect_errno){
-      echo "Errno: " . $mysqli->connect_errno . "\n";
-      echo "Error: " . $mysqli->connect_error . "\n";
-    }
-    $sqlquery = "select * from users";
-    if($result = $mysqli->query($sqlquery)){
-        while($row = $result->fetch_assoc()){
-          echo $row['name'];
-        }
-        //die("ok");
+    $this->mysqli = new Mysqli($this->databasehost,$this->databaseuser,$this->databasepassword,$this->database);
+    if($this->mysqli->connect_errno){
+      echo "Errno: " . $this->mysqli->connect_errno . "\n";
+      echo "Error: " . $this->mysqli->connect_error . "\n";
     }
     else{
-      echo $mysqli->error;
-      //die('nicht ok');
+      //echo "successfully connected\n";
     }
-    //die('');
   }
-  public function finishedJob(){
+  /*
+   * Selects all or a single record/s
+   * $sTablename (String) - Name of the Table which gets the new Record
+   * $sIdnumber (String) - ID of the Record which needs to be selected
+   * returns $aResults (Array)
+   */
+  public function show($sTablename,$sIdnumber=''){
+    if($sIdnumber!=''){
+      $sqlquery = "select * from ".$sTablename."s where pid =".$sIdnumber;
+    }
+    else{
+      $sqlquery = "select * from ".$sTablename;
+    }
 
+    if($result = $this->mysqli->query($sqlquery)){
+        while($row = $result->fetch_assoc()){
+          $aResults[] = $row;
+        }
+    }
+    
+    if(!isset($aResults)){
+      $aResults = array(
+        'detail'=>'No data found',
+        'status'=> 404,
+        'title'=> 'error',
+        'type'=> 'about:blank'
+        );
+    }
+    return $aResults;
   }
-  public function reportError(){
-
+  /*
+   * Inserts a new Record
+   * $sTablename (String) - Name of the Table which gets the new Record
+   * $aParams (Array) - Indexname is Columnname and referring Values
+   * returns $aResults (Array)
+   */
+  public function create($sTablename,$aParams){
+    //column names
+    $sColnames = "";
+    //column values
+    $sColvalues = "";
+    foreach($aParams as $sSingleParameterIndex => $sSingleParameterValue){
+      $sColnames .= $sSingleParameterIndex.',';
+      $sColvalues .= "'".$sSingleParameterValue."',";
+    }
+    $sColnames = substr($sColnames,0,-1);
+    $sColvalues = substr($sColvalues,0,-1);
+    $sqlquery = "insert into ".$sTablename. "(".$sColnames.") VALUES (".$sColvalues.")";
+    //die($sqlquery);
+    if($result = $this->mysqli->query($sqlquery)){
+      $aResults = array(
+        'detail'=>'successfully inserted',
+        'status'=> 200,
+        'title'=> 'message',
+        'type'=> 'about:blank'
+        );
+    }
+    else{
+      $aResults = array(
+        'detail'=>'Not possible',
+        'status'=> 403,
+        'title'=> 'error',
+        'type'=> 'about:blank'
+        );
+    }
+    return $aResults;
   }
 }

@@ -3,17 +3,18 @@ use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
 require '../vendor/autoload.php';
-//db configs
+
 $config['displayErrorDetails'] = true;
 $config['addContentLengthHeader'] = false;
-
+//db configs
 $config['db']['host'] = "localhost";
 $config['db']['user'] = "root";
 $config['db']['pass'] = "jose8819";
 $config['db']['dbname'] = "josetest";
 
+$sApiVersion = 'v1';
 
-
+$container = new \Slim\Container;
 $app = new \Slim\App(["settings" => $config]);
 
 $container = $app->getContainer();
@@ -24,20 +25,100 @@ $container['logger'] = function($c) {
     $logger->pushHandler($file_handler);
     return $logger;
 };
-
-$container['db'] = function($c){
-  $db = $c['settings']['db'];
-  $api = new \Classes\MonitoringToolAPI($db['dbname'],$db['host'],$db['user'],$db['pass']);
-  $api->connect();
+//db container
+$container['db'] = function($c) {
+    $aDb = $c['settings']['db'];
+    $oApi = new \Classes\MonitoringToolAPI($aDb['dbname'],$aDb['host'],$aDb['user'],$aDb['pass']);
+    return $oApi;
 };
 
-$app->get('/hello/{name}', function (Request $request, Response $response) {
+//get all
+$app->get('/api/'.$sApiVersion.'/{object}', function (Request $request, Response $response) {
+    $sTablename = $request->getAttribute('object');
+    $oApi = $this->db;
+    $iStatus = 200;
 
-    $name = $request->getAttribute('name');
-    $response->getBody()->write("Hello, $name");
-    $this->db;
-    //$this->logger->addInfo('Some info');
-    return $response;
+    if($oApi->isAllowed($sTablename)){
+      $aData = $oApi->show($sTablename);
+      if(isset($aData['status'])){
+          $iStatus = $aData['status'];
+      }
+    }
+    else{
+      $aData = array(
+        'detail'=> 'Table not allowed',
+        'status'=> 403,
+        'title'=> 'error',
+        'type'=> 'about:blank'
+      );
+      $iStatus = $aData['status'];
+    }
+    return $response->withStatus($iStatus)
+    ->withHeader('Content-Type', 'application/json')
+    ->write(json_encode($aData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+});
+
+//get single
+$app->get('/api/'.$sApiVersion.'/{object}/{idnumber}', function (Request $request, Response $response) {
+    $sTablename = $request->getAttribute('object');
+    $sIdnumber = $request->getAttribute('idnumber');
+    $oApi = $this->db;
+    $iStatus = 200;
+
+    if($oApi->isAllowed($sTablename)){
+      $aData = $oApi->show($sTablename,$sIdnumber);
+      if(isset($aData['status'])){
+          $iStatus = $aData['status'];
+      }
+    }
+    else{
+      $aData = array(
+        'detail'=> 'Table not allowed',
+        'status'=> 403,
+        'title'=> 'error',
+        'type'=> 'about:blank'
+      );
+      $iStatus = $aData['status'];
+    }
+    return $response->withStatus($iStatus)
+    ->withHeader('Content-Type', 'application/json')
+    ->write(json_encode($aData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+});
+
+//insert
+$app->post('/api/'.$sApiVersion.'/{object}', function (Request $request, Response $response) {
+    //get encrypted code
+    $sTablename = $request->getAttribute('object');
+    $aParameter = $request->getParsedBody();
+
+
+    //decrypt code
+
+    //get params
+
+    //$response->getBody()->write("Hello has value, $code['hello']");
+    //send them to db
+    $oApi = $this->db;
+    $iStatus = 200;
+
+    if($oApi->isAllowed($sTablename)){
+      $aData = $oApi->create($sTablename,$aParameter);
+      if(isset($aData['status'])){
+          $iStatus = $aData['status'];
+      }
+    }
+    else{
+      $aData = array(
+        'detail'=> 'Table not allowed',
+        'status'=> 403,
+        'title'=> 'error',
+        'type'=> 'about:blank'
+      );
+      $iStatus = $aData['status'];
+    }
+    return $response->withStatus($iStatus)
+    ->withHeader('Content-Type', 'application/json')
+    ->write(json_encode($aData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
 });
 
 $app->run();
