@@ -48,8 +48,7 @@ $app->get('/api/'.$sApiVersion.'/{object}', function (Request $request, Response
       $aData = array(
         'detail'=> 'Authorization failed',
         'status'=> 403,
-        'title'=> 'error',
-        'type'=> 'about:blank'
+        'title'=> 'error'
       );
       $iStatus = $aData['status'];
     }
@@ -75,8 +74,7 @@ $app->get('/api/'.$sApiVersion.'/{object}/{idnumber}', function (Request $reques
       $aData = array(
         'detail'=> 'Authorization failed',
         'status'=> 403,
-        'title'=> 'error',
-        'type'=> 'about:blank'
+        'title'=> 'error'
       );
       $iStatus = $aData['status'];
     }
@@ -111,8 +109,7 @@ $app->post('/api/'.$sApiVersion.'/{object}', function (Request $request, Respons
       $aData = array(
         'detail'=> 'Authorization failed',
         'status'=> 403,
-        'title'=> 'error',
-        'type'=> 'about:blank'
+        'title'=> 'error'
       );
       $iStatus = $aData['status'];
     }
