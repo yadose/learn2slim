@@ -44,7 +44,7 @@ class MonitoringToolAPI {
     $sqlquery = "select pid,domain from devices where devices.key = '".$aParams['key']."'";
     if($result = $this->mysqli->query($sqlquery)){
         if($row = $result->fetch_row()){
-          if(!password_verify($aParams['key'].$row[0].$row[1].round(time()/60),$aParams['password'])){
+          if(!password_verify($aParams['key'].$row[0].$row[1],$aParams['password'])){
             return false;
           }
         }
