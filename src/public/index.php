@@ -46,7 +46,7 @@ $app->get('/api/'.$sApiVersion.'/{object}', function (Request $request, Response
     }
     else{
       $aData = array(
-        'detail'=> 'Table not allowed',
+        'detail'=> 'Authorization failed',
         'status'=> 403,
         'title'=> 'error',
         'type'=> 'about:blank'
@@ -73,7 +73,7 @@ $app->get('/api/'.$sApiVersion.'/{object}/{idnumber}', function (Request $reques
     }
     else{
       $aData = array(
-        'detail'=> 'Table not allowed',
+        'detail'=> 'Authorization failed',
         'status'=> 403,
         'title'=> 'error',
         'type'=> 'about:blank'
@@ -101,7 +101,7 @@ $app->post('/api/'.$sApiVersion.'/{object}', function (Request $request, Respons
     $oApi = $this->db;
     $iStatus = 200;
 
-    if($oApi->isAllowed($sTablename)){
+    if($oApi->isAllowed($sTablename,$aParameter)){
       $aData = $oApi->create($sTablename,$aParameter);
       if(isset($aData['status'])){
           $iStatus = $aData['status'];
@@ -109,7 +109,7 @@ $app->post('/api/'.$sApiVersion.'/{object}', function (Request $request, Respons
     }
     else{
       $aData = array(
-        'detail'=> 'Table not allowed',
+        'detail'=> 'Authorization failed',
         'status'=> 403,
         'title'=> 'error',
         'type'=> 'about:blank'
@@ -119,6 +119,11 @@ $app->post('/api/'.$sApiVersion.'/{object}', function (Request $request, Respons
     return $response->withStatus($iStatus)
     ->withHeader('Content-Type', 'application/json')
     ->write(json_encode($aData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+});
+
+//testarea
+$app->get('/test/', function (Request $request, Response $response) {
+    $response->getBody()->write("Hello don't mind me.");
 });
 
 $app->run();
