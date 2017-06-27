@@ -9,6 +9,7 @@ class MonitoringToolAPI {
   private $databaseuser;
   private $databasepassword;
   private $mysqli;
+  private $allowedSession;
   private $allowedTables = array(
     "clients",
     "client",
@@ -39,7 +40,21 @@ class MonitoringToolAPI {
    * $sCheck (String) - String which needs to be checked
    * returns (Bool)
    */
-  public function isAllowed($sCheck){
+  public function isAllowed($sCheck,$aParams=array()){
+    $sqlquery = "select pid,domain from devices where devices.key = '".$aParams['key']."'";
+    if($result = $this->mysqli->query($sqlquery)){
+        if($row = $result->fetch_row()){
+          if(!password_verify($aParams['key'].$row[0].$row[1].round(time()/60),$aParams['password'])){
+            return false;
+          }
+        }
+        else{
+          return false;
+        }
+    }
+    else{
+      return false;
+    }
     return in_array($sCheck,$this->allowedTables);
   }
   /*
@@ -55,6 +70,7 @@ class MonitoringToolAPI {
     }
     else{
       //echo "successfully connected\n";
+
     }
   }
   /*
@@ -76,7 +92,7 @@ class MonitoringToolAPI {
           $aResults[] = $row;
         }
     }
-    
+
     if(!isset($aResults)){
       $aResults = array(
         'detail'=>'No data found',
@@ -99,8 +115,10 @@ class MonitoringToolAPI {
     //column values
     $sColvalues = "";
     foreach($aParams as $sSingleParameterIndex => $sSingleParameterValue){
-      $sColnames .= $sSingleParameterIndex.',';
-      $sColvalues .= "'".$sSingleParameterValue."',";
+      if($sSingleParameterIndex != 'key' && $sSingleParameterIndex!='password'){
+        $sColnames .= $sSingleParameterIndex.',';
+        $sColvalues .= "'".$sSingleParameterValue."',";
+      }
     }
     $sColnames = substr($sColnames,0,-1);
     $sColvalues = substr($sColvalues,0,-1);
@@ -119,7 +137,8 @@ class MonitoringToolAPI {
         'detail'=>'Not possible',
         'status'=> 403,
         'title'=> 'error',
-        'type'=> 'about:blank'
+        'type'=> 'about:blank',
+        'select' => $sqlquery
         );
     }
     return $aResults;
