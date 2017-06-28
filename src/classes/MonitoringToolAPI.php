@@ -97,8 +97,7 @@ class MonitoringToolAPI {
       $aResults = array(
         'detail'=>'No data found',
         'status'=> 404,
-        'title'=> 'error',
-        'type'=> 'about:blank'
+        'title'=> 'error'
         );
     }
     return $aResults;
@@ -122,23 +121,33 @@ class MonitoringToolAPI {
     }
     $sColnames = substr($sColnames,0,-1);
     $sColvalues = substr($sColvalues,0,-1);
-    $sqlquery = "insert into ".$sTablename. "(".$sColnames.") VALUES (".$sColvalues.")";
-    //die($sqlquery);
+    if($sTablename=='jobs'){
+        if($aParams['end']=='0'){
+          $sqlquery = "insert into ".$sTablename. "(".$sColnames.") VALUES (".$sColvalues.")";
+        }
+        else{
+          $sqlquery = "update ".$sTablename. " SET end = '".$aParams['end']."' WHERE START='".$aParams['start']."' AND DEVICE='".$aParams['device']."' AND TYPE='".$aParams['type']."'";
+        }
+
+    }
+    else{
+        $sqlquery = "insert into ".$sTablename. "(".$sColnames.") VALUES (".$sColvalues.")";
+    }
+
     if($result = $this->mysqli->query($sqlquery)){
+
       $aResults = array(
         'detail'=>'successfully inserted',
         'status'=> 200,
-        'title'=> 'message',
-        'type'=> 'about:blank'
+        'title'=> 'message'
         );
+
     }
     else{
       $aResults = array(
         'detail'=>'Not possible',
         'status'=> 403,
-        'title'=> 'error',
-        'type'=> 'about:blank',
-        'select' => $sqlquery
+        'title'=> 'error'
         );
     }
     return $aResults;
