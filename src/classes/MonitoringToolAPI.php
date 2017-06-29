@@ -4,14 +4,47 @@ use \PDO;
 
 class MonitoringToolAPI {
   //database credential variables
+  /*
+   * string
+   * Type of the Database (Mysql, Oracle, MariaDB)
+   */
   private $databasetype;
+  /*
+   * string
+   * Name of the Database
+   */
   private $databasename;
+  /*
+   * string
+   * Host of the Database
+   */
   private $databasehost;
+  /*
+   * string
+   * User of the Database
+   */
   private $databaseuser;
+  /*
+   * string
+   * Password of the Database
+   */
   private $databasepassword;
-  private $allowedSession;
+
+  //intern
+  /*
+   * object
+   * Object of the class PDO for intern use
+   */
   private $dbObject;
+  /*
+   * object
+   * Object of the statement which is returned by PDO->prepare()
+   */
   private $dbStatement;
+  /*
+   * array(string)
+   * Array of Strings containing allowed Tables to select from or insert/update to
+   */
   private $allowedTables = array(
     "clients",
     "client",
@@ -24,6 +57,7 @@ class MonitoringToolAPI {
   );
   /*
    * Creates new object of this class and connects to database
+   * $sDbtype (String) - Database Type (Mysql, Oracle, MariaDB)
    * $sDbname (String) - Name of the Database
    * $sDbhost (String) - Name of the Database Host
    * $sDbuser (String) - Name of the Database User
@@ -40,6 +74,7 @@ class MonitoringToolAPI {
   }
   /*
    * Checks if tablenames are allowed depending from $this->allowedTables
+   * and the key, verifies the password
    * $sCheck (String) - String which needs to be checked
    * returns (Bool)
    */
@@ -66,7 +101,6 @@ class MonitoringToolAPI {
    * returns NULL
    */
   public function connect(){
-    //phpinfo();
     try{
         $this->dbObject = new PDO($this->databasetype.':host='.$this->databasehost.';dbname='.$this->databasename,$this->databaseuser,$this->databasepassword);
     }
@@ -90,9 +124,9 @@ class MonitoringToolAPI {
     $dbStatement = $this->dbObject->prepare($sqlquery);
 
     if($dbStatement->execute(array($sIdnumber))){
-        while($row = $dbStatement->fetch()){
-          $aResults[] = $row;
-        }
+      while($row = $dbStatement->fetch()){
+        $aResults[] = $row;
+      }
     }
 
     if(!isset($aResults)){
@@ -132,28 +166,24 @@ class MonitoringToolAPI {
         }
         else{
           $sqlquery = "update ".$sTablename. " SET end = ? WHERE TYPE = ? AND START = ? AND DEVICE = ?";
+          //put array $mExecuteValues into the right order for later execution
           $mExecuteValues = array('end' => $aParams['end']);
           unset($aParams['end']);
           $mExecuteValues = array_values(array_merge($mExecuteValues,$aParams));
-          #print_r($mExecuteValues);
-          #die();
         }
-
     }
     else{
         $sqlquery = "insert into ".$sTablename. "(".$sColnames.") VALUES (".$sColbinds.")";
         $mExecuteValues = array_values($aParams);
     }
 
-  $dbStatement = $this->dbObject->prepare($sqlquery);
-  if($dbStatement->execute($mExecuteValues)){
-
+    $dbStatement = $this->dbObject->prepare($sqlquery);
+    if($dbStatement->execute($mExecuteValues)){
       $aResults = array(
         'detail'=>'successfully inserted',
         'status'=> 200,
         'title'=> 'message'
         );
-
     }
     else{
       $aResults = array(
