@@ -7,6 +7,7 @@ require '../vendor/autoload.php';
 $config['displayErrorDetails'] = true;
 $config['addContentLengthHeader'] = false;
 //db configs
+$config['db']['type'] = "mysql";
 $config['db']['host'] = "localhost";
 $config['db']['user'] = "root";
 $config['db']['pass'] = "jose8819";
@@ -28,7 +29,7 @@ $container['logger'] = function($c) {
 //db container
 $container['db'] = function($c) {
     $aDb = $c['settings']['db'];
-    $oApi = new \Classes\MonitoringToolAPI($aDb['dbname'],$aDb['host'],$aDb['user'],$aDb['pass']);
+    $oApi = new \Classes\MonitoringToolAPI($aDb['type'],$aDb['dbname'],$aDb['host'],$aDb['user'],$aDb['pass']);
     return $oApi;
 };
 
@@ -119,8 +120,12 @@ $app->post('/api/'.$sApiVersion.'/{object}', function (Request $request, Respons
 });
 
 //testarea
-$app->get('/test/', function (Request $request, Response $response) {
-    $response->getBody()->write("Hello don't mind me.");
+$app->post('/test/', function (Request $request, Response $response) {
+    #$response->getBody()->write("Hello don't mind me.");
+    $aParameter = $request->getParsedBody();
+    $oApi = $this->db;
+    //print_r($oApi->show('error',11));
+    print_r($oApi->create('jobs',$aParameter));
 });
 
 $app->run();
