@@ -19,20 +19,16 @@ $container = new \Slim\Container;
 $app = new \Slim\App(["settings" => $config]);
 
 $container = $app->getContainer();
-//add logger
-$container['logger'] = function($c) {
-    $logger = new \Monolog\Logger('my_logger');
-    $file_handler = new \Monolog\Handler\StreamHandler("../logs/app.log");
-    $logger->pushHandler($file_handler);
-    return $logger;
-};
+
 //db container
 $container['db'] = function($c) {
     $aDb = $c['settings']['db'];
     $oApi = new \Classes\MonitoringToolAPI($aDb['type'],$aDb['dbname'],$aDb['host'],$aDb['user'],$aDb['pass']);
     return $oApi;
 };
-
+/*
+ * Methods
+ */
 //get all
 $app->get('/api/'.$sApiVersion.'/{object}', function (Request $request, Response $response) {
     $sTablename = $request->getAttribute('object');
@@ -86,17 +82,11 @@ $app->get('/api/'.$sApiVersion.'/{object}/{idnumber}', function (Request $reques
 
 //insert
 $app->post('/api/'.$sApiVersion.'/{object}', function (Request $request, Response $response) {
-    //get encrypted code
+
     $sTablename = $request->getAttribute('object');
     $aParameter = $request->getParsedBody();
 
-
-    //decrypt code
-
-    //get params
-
-    //$response->getBody()->write("Hello has value, $code['hello']");
-    //send them to db
+    //connect to db
     $oApi = $this->db;
     $iStatus = 200;
 
