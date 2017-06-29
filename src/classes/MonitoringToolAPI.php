@@ -1,15 +1,17 @@
 <?php
 namespace Classes;
-use \Mysqli;
+use \PDO;
 
 class MonitoringToolAPI {
   //database credential variables
-  private $database;
+  private $databasetype;
+  private $databasename;
   private $databasehost;
   private $databaseuser;
   private $databasepassword;
-  private $mysqli;
   private $allowedSession;
+  private $dbObject;
+  private $dbStatement;
   private $allowedTables = array(
     "clients",
     "client",
@@ -28,8 +30,9 @@ class MonitoringToolAPI {
    * $sDbpasswd (String) - Full String of the Database Users Password
    * returns NULL
    */
-  public function __construct($sDbname,$sDbhost,$sDbuser,$sDbpasswd){
-    $this->database = $sDbname;
+  public function __construct($sDbtype,$sDbname,$sDbhost,$sDbuser,$sDbpasswd){
+    $this->databasetype = $sDbtype;
+    $this->databasename = $sDbname;
     $this->databasehost = $sDbhost;
     $this->databaseuser = $sDbuser;
     $this->databasepassword = $sDbpasswd;
@@ -41,9 +44,10 @@ class MonitoringToolAPI {
    * returns (Bool)
    */
   public function isAllowed($sCheck,$aParams=array()){
-    $sqlquery = "select pid,domain from devices where devices.key = '".$aParams['key']."'";
-    if($result = $this->mysqli->query($sqlquery)){
-        if($row = $result->fetch_row()){
+    $sqlquery = "select pid,domain from devices where devices.key = ?";
+    $dbStatement = $this->dbObject->prepare($sqlquery);
+    if($dbStatement->execute(array($aParams['key']))){
+        if($row = $dbStatement->fetch()){
           if(!password_verify($aParams['key'].$row[0].$row[1],$aParams['password'])){
             return false;
           }
@@ -63,14 +67,11 @@ class MonitoringToolAPI {
    */
   public function connect(){
     //phpinfo();
-    $this->mysqli = new Mysqli($this->databasehost,$this->databaseuser,$this->databasepassword,$this->database);
-    if($this->mysqli->connect_errno){
-      echo "Errno: " . $this->mysqli->connect_errno . "\n";
-      echo "Error: " . $this->mysqli->connect_error . "\n";
+    try{
+        $this->dbObject = new PDO($this->databasetype.':host='.$this->databasehost.';dbname='.$this->databasename,$this->databaseuser,$this->databasepassword);
     }
-    else{
-      //echo "successfully connected\n";
-
+    catch (PDOExeption $e){
+      echo "Connection failed: ".$e->getMessage();
     }
   }
   /*
@@ -81,14 +82,15 @@ class MonitoringToolAPI {
    */
   public function show($sTablename,$sIdnumber=''){
     if($sIdnumber!=''){
-      $sqlquery = "select * from ".$sTablename."s where pid =".$sIdnumber;
+      $sqlquery = "select * from ".$sTablename."s where pid = ? ";
     }
     else{
       $sqlquery = "select * from ".$sTablename;
     }
+    $dbStatement = $this->dbObject->prepare($sqlquery);
 
-    if($result = $this->mysqli->query($sqlquery)){
-        while($row = $result->fetch_assoc()){
+    if($dbStatement->execute(array($sIdnumber))){
+        while($row = $dbStatement->fetch()){
           $aResults[] = $row;
         }
     }
@@ -111,30 +113,40 @@ class MonitoringToolAPI {
   public function create($sTablename,$aParams){
     //column names
     $sColnames = "";
-    //column values
-    $sColvalues = "";
+    $sColbinds = "";
+    //execute Content
+    $mExecuteValues = [];
+    //unset unneccesairy values
+    unset($aParams['key']);
+    unset($aParams['password']);
     foreach($aParams as $sSingleParameterIndex => $sSingleParameterValue){
-      if($sSingleParameterIndex != 'key' && $sSingleParameterIndex!='password'){
-        $sColnames .= $sSingleParameterIndex.',';
-        $sColvalues .= "'".$sSingleParameterValue."',";
-      }
+      $sColnames .= $sSingleParameterIndex.',';
+      $sColbinds .= '?,';
     }
     $sColnames = substr($sColnames,0,-1);
-    $sColvalues = substr($sColvalues,0,-1);
+    $sColbinds = substr($sColbinds,0,-1);
     if($sTablename=='jobs'){
         if($aParams['end']=='0'){
-          $sqlquery = "insert into ".$sTablename. "(".$sColnames.") VALUES (".$sColvalues.")";
+          $sqlquery = "insert into ".$sTablename. "(".$sColnames.") VALUES (".$sColbinds.")";
+          $mExecuteValues = array_values($aParams);
         }
         else{
-          $sqlquery = "update ".$sTablename. " SET end = '".$aParams['end']."' WHERE START='".$aParams['start']."' AND DEVICE='".$aParams['device']."' AND TYPE='".$aParams['type']."'";
+          $sqlquery = "update ".$sTablename. " SET end = ? WHERE TYPE = ? AND START = ? AND DEVICE = ?";
+          $mExecuteValues = array('end' => $aParams['end']);
+          unset($aParams['end']);
+          $mExecuteValues = array_values(array_merge($mExecuteValues,$aParams));
+          #print_r($mExecuteValues);
+          #die();
         }
 
     }
     else{
-        $sqlquery = "insert into ".$sTablename. "(".$sColnames.") VALUES (".$sColvalues.")";
+        $sqlquery = "insert into ".$sTablename. "(".$sColnames.") VALUES (".$sColbinds.")";
+        $mExecuteValues = array_values($aParams);
     }
 
-    if($result = $this->mysqli->query($sqlquery)){
+  $dbStatement = $this->dbObject->prepare($sqlquery);
+  if($dbStatement->execute($mExecuteValues)){
 
       $aResults = array(
         'detail'=>'successfully inserted',
