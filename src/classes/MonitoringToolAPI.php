@@ -46,13 +46,9 @@ class MonitoringToolAPI {
    * Array of Strings containing allowed Tables to select from or insert/update to
    */
   private $allowedTables = array(
-    "clients",
     "client",
-    "devices",
     "device",
-    "errors",
     "error",
-    "jobs",
     "job"
   );
   /*
@@ -79,7 +75,7 @@ class MonitoringToolAPI {
    * returns (Bool)
    */
   public function isAllowed($sCheck,$aParams=array()){
-    $sqlquery = "select pid,domain from devices where devices.key = ?";
+    $sqlquery = "select pid,domain from device where device.key = ?";
     $dbStatement = $this->dbObject->prepare($sqlquery);
     if($dbStatement->execute(array($aParams['key']))){
         if($row = $dbStatement->fetch()){
@@ -116,7 +112,7 @@ class MonitoringToolAPI {
    */
   public function show($sTablename,$sIdnumber=''){
     if($sIdnumber!=''){
-      $sqlquery = "select * from ".$sTablename."s where pid = ? ";
+      $sqlquery = "select * from ".$sTablename." where pid = ? ";
     }
     else{
       $sqlquery = "select * from ".$sTablename;
@@ -159,13 +155,13 @@ class MonitoringToolAPI {
     }
     $sColnames = substr($sColnames,0,-1);
     $sColbinds = substr($sColbinds,0,-1);
-    if($sTablename=='jobs'){
+    if($sTablename=='job'){
         if($aParams['end']=='0'){
           $sqlquery = "insert into ".$sTablename. "(".$sColnames.") VALUES (".$sColbinds.")";
           $mExecuteValues = array_values($aParams);
         }
         else{
-          $sqlquery = "update ".$sTablename. " SET end = ? WHERE TYPE = ? AND START = ? AND DEVICE = ?";
+          $sqlquery = "update ".$sTablename. " SET end = ? WHERE type = ? AND start = ? AND deviceId = ?";
           //put array $mExecuteValues into the right order for later execution
           $mExecuteValues = array('end' => $aParams['end']);
           unset($aParams['end']);
@@ -189,7 +185,8 @@ class MonitoringToolAPI {
       $aResults = array(
         'detail'=>'Not possible',
         'status'=> 403,
-        'title'=> 'error'
+        'title'=> 'error',
+        'query'=>$mExecuteValues.' '.$sqlquery
         );
     }
     return $aResults;
