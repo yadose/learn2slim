@@ -75,20 +75,23 @@ class MonitoringToolAPI {
    * returns (Bool)
    */
   public function isAllowed($sCheck,$aParams=array()){
-    $sqlquery = "select pid,domain from device where device.key = ?";
-    $dbStatement = $this->dbObject->prepare($sqlquery);
-    if($dbStatement->execute(array($aParams['key']))){
-        if($row = $dbStatement->fetch()){
-          if(!password_verify($aParams['key'].$row[0].$row[1],$aParams['password'])){
+    //Ausnahme Locale Angular Programm
+    if(isset($aParams['key']) || (!isset($aParams['key']) && $_SERVER['REMOTE_ADDR'] != '127.0.0.1') ){/*192.168.4.21,localhost*/
+      $sqlquery = "select pid,domain from device where device.key = ?";
+      $dbStatement = $this->dbObject->prepare($sqlquery);
+      if($dbStatement->execute(array($aParams['key']))){
+          if($row = $dbStatement->fetch()){
+            if(!password_verify($aParams['key'].$row[0].$row[1],$aParams['password'])){
+              return false;
+            }
+          }
+          else{
             return false;
           }
-        }
-        else{
-          return false;
-        }
-    }
-    else{
-      return false;
+      }
+      else{
+        return false;
+      }
     }
     return in_array($sCheck,$this->allowedTables);
   }
