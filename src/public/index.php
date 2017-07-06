@@ -50,6 +50,7 @@ $app->get('/api/'.$sApiVersion.'/{object}', function (Request $request, Response
       $iStatus = $aData['status'];
     }
     return $response->withStatus($iStatus)
+    ->withHeader('Access-Control-Allow-Origin','*')
     ->withHeader('Content-Type', 'application/json')
     ->write(json_encode($aData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
 });
@@ -76,6 +77,7 @@ $app->get('/api/'.$sApiVersion.'/{object}/{idnumber}', function (Request $reques
       $iStatus = $aData['status'];
     }
     return $response->withStatus($iStatus)
+    ->withHeader('Access-Control-Allow-Origin','*')
     ->withHeader('Content-Type', 'application/json')
     ->write(json_encode($aData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
 });
@@ -105,6 +107,7 @@ $app->post('/api/'.$sApiVersion.'/{object}', function (Request $request, Respons
       $iStatus = $aData['status'];
     }
     return $response->withStatus($iStatus)
+    ->withHeader('Access-Control-Allow-Origin','*')
     ->withHeader('Content-Type', 'application/json')
     ->write(json_encode($aData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
 });
