@@ -123,7 +123,7 @@ class MonitoringToolAPI {
     $dbStatement = $this->dbObject->prepare($sqlquery);
 
     if($dbStatement->execute(array($sIdnumber))){
-      while($row = $dbStatement->fetch()){
+      while($row = $dbStatement->fetchAll(PDO::FETCH_ASSOC)){
         $aResults[] = $row;
       }
     }
