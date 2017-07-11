@@ -112,6 +112,36 @@ $app->post('/api/'.$sApiVersion.'/{object}', function (Request $request, Respons
     ->write(json_encode($aData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
 });
 
+//filter
+$app->post('/api/'.$sApiVersion.'/{object}/filter/', function (Request $request, Response $response) {
+
+    $sTablename = $request->getAttribute('object');
+    $aParameter = $request->getParsedBody();
+
+    //connect to db
+    $oApi = $this->db;
+    $iStatus = 200;
+
+    if($oApi->isAllowed($sTablename,$aParameter)){
+      $aData = $oApi->show($sTablename,'',$aParameter);
+      if(isset($aData['status'])){
+          $iStatus = $aData['status'];
+      }
+    }
+    else{
+      $aData = array(
+        'detail'=> 'Authorization failed',
+        'status'=> 403,
+        'title'=> 'error'
+      );
+      $iStatus = $aData['status'];
+    }
+    return $response->withStatus($iStatus)
+    ->withHeader('Access-Control-Allow-Origin','*')
+    ->withHeader('Content-Type', 'application/json')
+    ->write(json_encode($aData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+});
+
 //testarea
 $app->post('/test/', function (Request $request, Response $response) {
     #$response->getBody()->write("Hello don't mind me.");
