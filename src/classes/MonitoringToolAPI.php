@@ -113,9 +113,16 @@ class MonitoringToolAPI {
    * $sIdnumber (String) - ID of the Record which needs to be selected
    * returns $aResults (Array)
    */
-  public function show($sTablename,$sIdnumber=''){
+  public function show($sTablename,$sIdnumber='',$aParameter=array()){
+    if(isset($aParameter['filter']) && isset($aParameter['filtertext'])){
+      $sFiltercol=$aParameter['filter'];
+      $sFiltertext=$aParameter['filtertext'];
+    }
     if($sIdnumber!=''){
       $sqlquery = "select * from ".$sTablename." where pid = ? ";
+    }
+    else if(isset($sFiltercol)){
+      $sqlquery = "select * from ".$sTablename." where ".$sFiltercol." like '%".$sFiltertext."%'";
     }
     else{
       $sqlquery = "select * from ".$sTablename;
@@ -135,7 +142,7 @@ class MonitoringToolAPI {
         'title'=> 'error'
         );
     }
-    return $aResults;
+    return substr(json_encode($aResults),1,-1);
   }
   /*
    * Inserts a new Record
